@@ -1,0 +1,45 @@
+import numpy as np
+import yfinance as yf
+
+STOCK = 'AAPL'
+
+def get_stock_data(stock, start_date, end_date):
+    stock_data = yf.download(stock, start=start_date, end=end_date)
+    return stock_data
+
+def european_option_price(S0, K, r, v, T, n, flag):
+    z = np.random.standard_normal(n)
+    S_fwd = S0 * np.exp((r - 0.5 * v**2) * T + v * np.sqrt(T) * z)
+
+    if flag == 'call':
+        payoff = np.maximum(S_fwd - K, 0)
+    elif flag == 'put':
+        payoff = np.maximum(K - S_fwd, 0)
+    else:
+        print('Incorrect flag')
+        return
+
+    return np.exp(-r * T) * np.mean(payoff)
+
+# Specify the date range
+start_date = '2023-02-01'
+end_date = '2024-02-01'
+
+# Fetch historical stock data from Yahoo Finance
+stock_data = get_stock_data(STOCK, start_date, end_date)
+
+# Calculate daily returns and volatility
+daily_returns = stock_data['Adj Close'].pct_change().dropna()
+v = stock_volatility = daily_returns.std()
+
+# Set other parameters
+S0 = stock_price = stock_data['Adj Close'].iloc[-1]
+K = strike_price = stock_data['Adj Close'].iloc[-1]
+r = risk_free_rate = 0.04
+T = maturity = 1
+n = 100000
+flag = "call"
+
+# Calculate option price
+call_price = european_option_price(S0, K, r, v, T, n, flag)
+print("Call Option Price:", call_price)
